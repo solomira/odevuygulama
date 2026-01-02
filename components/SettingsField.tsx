@@ -1,10 +1,7 @@
-/**
- * Reusable component for settings input fields
- */
-
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 interface SettingsFieldProps {
   label: string;
@@ -33,18 +30,21 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
   switchValue,
   onSwitchChange,
 }) => {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+
   if (type === 'switch' && switchValue !== undefined && onSwitchChange) {
     return (
       <View style={styles.container}>
         <View style={styles.labelContainer}>
-          <Ionicons name={icon} size={20} color="#6366f1" style={styles.icon} />
-          <Text style={styles.label}>{label}</Text>
+          <Ionicons name={icon} size={20} color={colors.primary} style={styles.icon} />
+          <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
         </View>
         <Switch
           value={switchValue}
           onValueChange={onSwitchChange}
-          trackColor={{ false: '#d1d5db', true: '#6366f1' }}
-          thumbColor={switchValue ? '#ffffff' : '#f3f4f6'}
+          trackColor={{ false: colors.border, true: colors.primary }}
+          thumbColor={switchValue ? '#ffffff' : colors.surface}
         />
       </View>
     );
@@ -53,13 +53,18 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.labelContainer}>
-        <Ionicons name={icon} size={20} color="#6366f1" style={styles.icon} />
-        <Text style={styles.label}>{label}</Text>
+        <Ionicons name={icon} size={20} color={colors.primary} style={styles.icon} />
+        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
       </View>
       {type === 'slider' ? (
-        <View style={styles.inputContainer}>
+        <View
+          style={[
+            styles.inputContainer,
+            { backgroundColor: colors.background, borderColor: colors.border },
+          ]}
+        >
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             value={value.toString()}
             onChangeText={(text) => {
               const num = parseFloat(text) || 0;
@@ -70,12 +75,17 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
             keyboardType="numeric"
             maxLength={5}
           />
-          <Text style={styles.unit}>{unit}</Text>
+          <Text style={[styles.unit, { color: colors.textSecondary }]}>{unit}</Text>
         </View>
       ) : (
-        <View style={styles.inputContainer}>
+        <View
+          style={[
+            styles.inputContainer,
+            { backgroundColor: colors.background, borderColor: colors.border },
+          ]}
+        >
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             value={value.toString()}
             onChangeText={(text) => {
               const num = parseFloat(text) || 0;
@@ -86,51 +96,46 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
             keyboardType="numeric"
             maxLength={5}
           />
-          <Text style={styles.unit}>{unit}</Text>
+          <Text style={[styles.unit, { color: colors.textSecondary }]}>{unit}</Text>
         </View>
       )}
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 24,
-  },
-  labelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  icon: {
-    marginRight: 8,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    flex: 1,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  unit: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginLeft: 8,
-  },
-});
-
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      marginBottom: 24,
+    },
+    labelContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    icon: {
+      marginRight: 8,
+    },
+    label: {
+      fontSize: 16,
+      fontWeight: '600',
+      flex: 1,
+    },
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: 12,
+      borderWidth: 2,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    input: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    unit: {
+      fontSize: 14,
+      marginLeft: 8,
+    },
+  });

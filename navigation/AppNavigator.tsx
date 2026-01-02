@@ -1,7 +1,3 @@
-/**
- * Main navigation configuration
- */
-
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -11,16 +7,19 @@ import { GradeInputScreen } from '../screens/GradeInputScreen';
 import { ResultsScreen } from '../screens/ResultsScreen';
 import { GoalCalculatorScreen } from '../screens/GoalCalculatorScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MainStack = () => {
+  const { colors } = useTheme();
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        cardStyle: { backgroundColor: '#f9fafb' },
+        cardStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen name="GradeInput" component={GradeInputScreen} />
@@ -31,6 +30,9 @@ const MainStack = () => {
 };
 
 export const AppNavigator: React.FC = () => {
+  const { t } = useLanguage();
+  const { colors } = useTheme();
+
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -38,11 +40,11 @@ export const AppNavigator: React.FC = () => {
           tabBarIcon: ({ focused, color, size }) => {
             let iconName: keyof typeof Ionicons.glyphMap;
 
-            if (route.name === 'Calculator') {
+            if (route.name === t.navigation.calculator) {
               iconName = focused ? 'calculator' : 'calculator-outline';
-            } else if (route.name === 'Goal') {
+            } else if (route.name === t.navigation.goal) {
               iconName = focused ? 'target' : 'target-outline';
-            } else if (route.name === 'Settings') {
+            } else if (route.name === t.navigation.settings) {
               iconName = focused ? 'settings' : 'settings-outline';
             } else {
               iconName = 'help-outline';
@@ -50,13 +52,13 @@ export const AppNavigator: React.FC = () => {
 
             return <Ionicons name={iconName} size={size} color={color} />;
           },
-          tabBarActiveTintColor: '#6366f1',
-          tabBarInactiveTintColor: '#9ca3af',
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textSecondary,
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: '#ffffff',
+            backgroundColor: colors.card,
             borderTopWidth: 1,
-            borderTopColor: '#e5e7eb',
+            borderTopColor: colors.border,
             paddingBottom: 8,
             paddingTop: 8,
             height: 60,
@@ -67,11 +69,10 @@ export const AppNavigator: React.FC = () => {
           },
         })}
       >
-        <Tab.Screen name="Calculator" component={MainStack} />
-        <Tab.Screen name="Goal" component={GoalCalculatorScreen} />
-        <Tab.Screen name="Settings" component={SettingsScreen} />
+        <Tab.Screen name={t.navigation.calculator} component={MainStack} />
+        <Tab.Screen name={t.navigation.goal} component={GoalCalculatorScreen} />
+        <Tab.Screen name={t.navigation.settings} component={SettingsScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
 };
-

@@ -1,72 +1,82 @@
-/**
- * Core calculation logic for grade calculations
- */
-
 import { GradeSettings, GradeInput, CalculationResult, GoalInput, GoalResult, LetterGradeRange } from '../types';
+import { Translations } from '../context/LanguageContext';
 
-/**
- * Validates if a grade is within valid range (0-100)
- */
 export const validateGrade = (grade: number | null): boolean => {
   if (grade === null || grade === undefined) return false;
   return grade >= 0 && grade <= 100;
 };
 
-/**
- * Calculates the semester grade based on midterm and final grades
- * Formula: (midterm * midtermWeight) + (final * finalWeight)
- */
 export const calculateSemesterGrade = (
   midterm: number,
   final: number,
   settings: GradeSettings
 ): number => {
-  const midtermContribution = (midterm * settings.midtermWeight) / 100;
-  const finalContribution = (final * settings.finalWeight) / 100;
+  const totalWeight = settings.midtermWeight + settings.finalWeight;
+  if (totalWeight === 0) return 0;
+  
+  const midtermContribution = (midterm * settings.midtermWeight) / totalWeight;
+  const finalContribution = (final * settings.finalWeight) / totalWeight;
   return midtermContribution + finalContribution;
 };
 
-/**
- * Determines if the student passed based on all rules
- */
 export const checkPassFail = (
   midterm: number,
   final: number,
   semesterGrade: number,
-  settings: GradeSettings
+  settings: GradeSettings,
+  t: Translations
 ): { passed: boolean; reasons: string[] } => {
   const reasons: string[] = [];
   let passed = true;
 
-  // Check minimum final exam grade rule
   if (final < settings.minimumFinalGrade) {
     passed = false;
     reasons.push(
-      `Final exam grade (${final.toFixed(1)}) is below the minimum required (${settings.minimumFinalGrade}). Automatic fail.`
+      t.calculations.finalBelowMinimum
+        .replace('{final}', final.toFixed(1))
+        .replace('{minimum}', settings.minimumFinalGrade.toString())
     );
   }
 
-  // Check minimum semester grade rule
   if (semesterGrade < settings.minimumSemesterGrade) {
     passed = false;
     reasons.push(
-      `Semester grade (${semesterGrade.toFixed(1)}) is below the minimum required (${settings.minimumSemesterGrade}).`
+      t.calculations.semesterBelowMinimum
+        .replace('{semester}', semesterGrade.toFixed(1))
+        .replace('{minimum}', settings.minimumSemesterGrade.toString())
     );
   }
 
-  // If passed, provide positive feedback
-  if (passed) {
+  if (settings.letterGradesEnabled) {
+    const letterGrade = getLetterGrade(semesterGrade, settings.letterGradeRanges);
+    if (letterGrade) {
+      const letterRange = settings.letterGradeRanges.find((r) => r.letter === letterGrade);
+      if (letterRange && !letterRange.passing) {
+        passed = false;
+        reasons.push(
+          t.calculations.letterGradeFail
+            .replace('{letter}', letterGrade)
+        );
+      } else if (letterRange && letterRange.passing) {
+        if (passed) {
+          reasons.push(
+            t.calculations.letterGradePass
+              .replace('{letter}', letterGrade)
+          );
+        }
+      }
+    }
+  }
+
+  if (passed && reasons.length === 0) {
     reasons.push(
-      `Congratulations! You passed with a semester grade of ${semesterGrade.toFixed(1)}.`
+      t.calculations.congratulations.replace('{grade}', semesterGrade.toFixed(1))
     );
   }
 
   return { passed, reasons };
 };
 
-/**
- * Gets the letter grade based on semester grade and letter grade ranges
- */
 export const getLetterGrade = (
   semesterGrade: number,
   letterGradeRanges: LetterGradeRange[]
@@ -79,14 +89,11 @@ export const getLetterGrade = (
   return undefined;
 };
 
-/**
- * Main calculation function that returns complete result
- */
 export const performCalculation = (
   input: GradeInput,
-  settings: GradeSettings
+  settings: GradeSettings,
+  t: Translations
 ): CalculationResult | null => {
-  // Validate inputs
   if (!validateGrade(input.midterm) || !validateGrade(input.final)) {
     return null;
   }
@@ -94,21 +101,17 @@ export const performCalculation = (
   const midterm = input.midterm!;
   const final = input.final!;
 
-  // Calculate semester grade
   const semesterGrade = calculateSemesterGrade(midterm, final, settings);
+  const { passed, reasons } = checkPassFail(midterm, final, semesterGrade, settings, t);
 
-  // Check pass/fail
-  const { passed, reasons } = checkPassFail(midterm, final, semesterGrade, settings);
-
-  // Get letter grade if enabled
   let letterGrade: string | undefined;
   if (settings.letterGradesEnabled) {
     letterGrade = getLetterGrade(semesterGrade, settings.letterGradeRanges);
   }
 
-  // Calculate breakdown
-  const midtermContribution = (midterm * settings.midtermWeight) / 100;
-  const finalContribution = (final * settings.finalWeight) / 100;
+  const totalWeight = settings.midtermWeight + settings.finalWeight;
+  const midtermContribution = totalWeight > 0 ? (midterm * settings.midtermWeight) / totalWeight : 0;
+  const finalContribution = totalWeight > 0 ? (final * settings.finalWeight) / totalWeight : 0;
 
   return {
     semesterGrade,
@@ -123,45 +126,154 @@ export const performCalculation = (
   };
 };
 
-/**
- * Calculates the minimum final exam grade needed to achieve a goal
- */
 export const calculateGoal = (
   goalInput: GoalInput,
-  settings: GradeSettings
+  settings: GradeSettings,
+  t: Translations
 ): GoalResult => {
   if (!validateGrade(goalInput.midterm)) {
     return {
       requiredFinal: null,
       possible: false,
-      message: 'Please enter a valid midterm grade.',
+      message: t.calculations.invalidMidterm,
     };
   }
 
   const midterm = goalInput.midterm!;
 
-  // Calculate required semester grade based on target type
+  if (goalInput.final !== null && validateGrade(goalInput.final)) {
+    const final = goalInput.final;
+    const semesterGrade = calculateSemesterGrade(midterm, final, settings);
+    const { passed, reasons } = checkPassFail(midterm, final, semesterGrade, settings, t);
+    
+    if (goalInput.targetType === 'pass') {
+      if (passed) {
+        return {
+          requiredFinal: final,
+          possible: true,
+          message: t.calculations.currentStatusPass
+            .replace('{semester}', semesterGrade.toFixed(1))
+            .replace('{final}', final.toFixed(1)),
+        };
+      } else {
+        const totalWeight = settings.midtermWeight + settings.finalWeight;
+        if (totalWeight === 0 || settings.finalWeight === 0) {
+          return {
+            requiredFinal: null,
+            possible: false,
+            message: t.calculations.invalidWeights,
+          };
+        }
+        
+        const midtermContribution = (midterm * settings.midtermWeight) / totalWeight;
+        const requiredFinalContribution = settings.minimumSemesterGrade - midtermContribution;
+        const requiredFinal = (requiredFinalContribution * totalWeight) / settings.finalWeight;
+        
+        let adjustedRequiredFinal = requiredFinal;
+        if (requiredFinal < settings.minimumFinalGrade) {
+          adjustedRequiredFinal = settings.minimumFinalGrade;
+          const adjustedSemesterGrade = calculateSemesterGrade(midterm, adjustedRequiredFinal, settings);
+          if (adjustedSemesterGrade < settings.minimumSemesterGrade) {
+            return {
+              requiredFinal: null,
+              possible: false,
+              message: t.calculations.impossiblePass
+                .replace('{minimumFinal}', settings.minimumFinalGrade.toString())
+                .replace('{minimumSemester}', settings.minimumSemesterGrade.toString()),
+            };
+          }
+        }
+        
+        return {
+          requiredFinal: adjustedRequiredFinal,
+          possible: true,
+          message: t.calculations.currentStatusFail
+            .replace('{semester}', semesterGrade.toFixed(1))
+            .replace('{final}', final.toFixed(1))
+            .replace('{required}', adjustedRequiredFinal.toFixed(1)),
+        };
+      }
+    } else if (goalInput.targetType === 'score') {
+      if (!goalInput.targetValue || typeof goalInput.targetValue !== 'number') {
+        return {
+          requiredFinal: null,
+          possible: false,
+          message: t.calculations.invalidTargetScore,
+        };
+      }
+      const targetScore = goalInput.targetValue as number;
+      
+      if (semesterGrade >= targetScore) {
+        return {
+          requiredFinal: final,
+          possible: true,
+          message: t.calculations.currentStatusScoreAchieved
+            .replace('{semester}', semesterGrade.toFixed(1))
+            .replace('{target}', targetScore.toString()),
+        };
+      } else {
+        const totalWeight = settings.midtermWeight + settings.finalWeight;
+        if (totalWeight === 0 || settings.finalWeight === 0) {
+          return {
+            requiredFinal: null,
+            possible: false,
+            message: t.calculations.invalidWeights,
+          };
+        }
+        
+        const midtermContribution = (midterm * settings.midtermWeight) / totalWeight;
+        const requiredFinalContribution = targetScore - midtermContribution;
+        const requiredFinal = (requiredFinalContribution * totalWeight) / settings.finalWeight;
+        
+        if (requiredFinal > 100) {
+          return {
+            requiredFinal: null,
+            possible: false,
+            message: t.calculations.impossibleGoal,
+          };
+        }
+        
+        if (requiredFinal < settings.minimumFinalGrade) {
+          return {
+            requiredFinal: null,
+            possible: false,
+            message: t.calculations.needFinalBelowMinimum
+              .replace('{required}', requiredFinal.toFixed(1))
+              .replace('{minimum}', settings.minimumFinalGrade.toString()),
+          };
+        }
+        
+        return {
+          requiredFinal: requiredFinal,
+          possible: true,
+          message: t.calculations.currentStatusScoreNotAchieved
+            .replace('{semester}', semesterGrade.toFixed(1))
+            .replace('{target}', targetScore.toString())
+            .replace('{required}', requiredFinal.toFixed(1)),
+        };
+      }
+    }
+  }
+
   let targetSemesterGrade: number;
 
   if (goalInput.targetType === 'pass') {
-    // Need to pass: must meet both minimum semester grade and minimum final grade
     targetSemesterGrade = settings.minimumSemesterGrade;
   } else if (goalInput.targetType === 'score') {
     if (!goalInput.targetValue || typeof goalInput.targetValue !== 'number') {
       return {
         requiredFinal: null,
         possible: false,
-        message: 'Please enter a valid target score.',
+        message: t.calculations.invalidTargetScore,
       };
     }
     targetSemesterGrade = goalInput.targetValue as number;
   } else {
-    // Letter grade
     if (!goalInput.targetValue || typeof goalInput.targetValue !== 'string') {
       return {
         requiredFinal: null,
         possible: false,
-        message: 'Please select a valid letter grade.',
+        message: t.calculations.invalidLetterGrade,
       };
     }
     const targetLetter = goalInput.targetValue as string;
@@ -170,25 +282,30 @@ export const calculateGoal = (
       return {
         requiredFinal: null,
         possible: false,
-        message: 'Invalid letter grade selected.',
+        message: t.calculations.invalidLetterSelected,
       };
     }
-    // Use minimum of the range to achieve the letter grade
     targetSemesterGrade = letterRange.min;
   }
 
-  // Formula: semesterGrade = (midterm * midtermWeight) + (final * finalWeight)
-  // Solving for final: final = (semesterGrade - (midterm * midtermWeight)) / finalWeight
-  const midtermContribution = (midterm * settings.midtermWeight) / 100;
+  const totalWeight = settings.midtermWeight + settings.finalWeight;
+  if (totalWeight === 0 || settings.finalWeight === 0) {
+    return {
+      requiredFinal: null,
+      possible: false,
+      message: t.calculations.invalidWeights,
+    };
+  }
+  
+  const midtermContribution = (midterm * settings.midtermWeight) / totalWeight;
   const requiredFinalContribution = targetSemesterGrade - midtermContribution;
-  const requiredFinal = (requiredFinalContribution * 100) / settings.finalWeight;
+  const requiredFinal = (requiredFinalContribution * totalWeight) / settings.finalWeight;
 
-  // Check if it's possible (final must be between 0 and 100)
   if (requiredFinal < 0) {
     return {
       requiredFinal: null,
       possible: false,
-      message: 'It is mathematically impossible to reach this goal. The target is too high given your midterm grade.',
+      message: t.calculations.impossibleGoal,
     };
   }
 
@@ -196,13 +313,11 @@ export const calculateGoal = (
     return {
       requiredFinal: null,
       possible: false,
-      message: 'It is mathematically impossible to reach this goal. The target is too high given your midterm grade.',
+      message: t.calculations.impossibleGoal,
     };
   }
 
-  // Check if required final meets minimum final grade requirement
   if (goalInput.targetType === 'pass' && requiredFinal < settings.minimumFinalGrade) {
-    // Need to use minimum final grade instead
     const adjustedRequiredFinal = settings.minimumFinalGrade;
     const adjustedSemesterGrade = calculateSemesterGrade(midterm, adjustedRequiredFinal, settings);
     
@@ -210,33 +325,38 @@ export const calculateGoal = (
       return {
         requiredFinal: null,
         possible: false,
-        message: `It is mathematically impossible to pass. Even with the minimum final grade (${settings.minimumFinalGrade}), you cannot reach the minimum semester grade (${settings.minimumSemesterGrade}).`,
+        message: t.calculations.impossiblePass
+          .replace('{minimumFinal}', settings.minimumFinalGrade.toString())
+          .replace('{minimumSemester}', settings.minimumSemesterGrade.toString()),
       };
     }
 
     return {
       requiredFinal: adjustedRequiredFinal,
       possible: true,
-      message: `You need at least ${adjustedRequiredFinal.toFixed(1)} in the final exam to pass (meeting the minimum final grade requirement of ${settings.minimumFinalGrade}).`,
+      message: t.calculations.needFinalToPass
+        .replace('{final}', adjustedRequiredFinal.toFixed(1))
+        .replace('{minimum}', settings.minimumFinalGrade.toString()),
     };
   }
 
-  // Check if required final meets minimum final grade for other targets
   if (requiredFinal < settings.minimumFinalGrade) {
     return {
       requiredFinal: null,
       possible: false,
-      message: `It is mathematically impossible to reach this goal. The required final grade (${requiredFinal.toFixed(1)}) is below the minimum final exam requirement (${settings.minimumFinalGrade}).`,
+      message: t.calculations.needFinalBelowMinimum
+        .replace('{required}', requiredFinal.toFixed(1))
+        .replace('{minimum}', settings.minimumFinalGrade.toString()),
     };
   }
 
-  let message = `You need at least ${requiredFinal.toFixed(1)} in the final exam`;
+  let message = t.calculations.needFinalForGoal.replace('{final}', requiredFinal.toFixed(1));
   if (goalInput.targetType === 'pass') {
-    message += ' to pass.';
+    message += ' ' + t.calculations.toPass;
   } else if (goalInput.targetType === 'score') {
-    message += ` to achieve a semester grade of ${targetSemesterGrade}.`;
+    message += ' ' + t.calculations.toAchieveScore.replace('{score}', targetSemesterGrade.toString());
   } else {
-    message += ` to achieve a letter grade of ${goalInput.targetValue}.`;
+    message += ' ' + t.calculations.toAchieveLetter.replace('{letter}', goalInput.targetValue as string);
   }
 
   return {
@@ -245,4 +365,3 @@ export const calculateGoal = (
     message,
   };
 };
-

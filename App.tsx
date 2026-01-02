@@ -1,21 +1,31 @@
-/**
- * Main App component
- * Grade Calculator App - React Native + Expo + TypeScript
- */
-
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider } from './context/AppContext';
+import { LanguageProvider } from './context/LanguageContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AppNavigator } from './navigation/AppNavigator';
+
+const AppContent = () => {
+  const { isDark } = useTheme();
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <AppNavigator />
+    </>
+  );
+};
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AppProvider>
-        <StatusBar style="dark" />
-        <AppNavigator />
-      </AppProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AppProvider>
+            <AppContent />
+          </AppProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

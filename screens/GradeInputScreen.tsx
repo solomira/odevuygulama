@@ -1,7 +1,3 @@
-/**
- * Main screen for entering midterm and final grades
- */
-
 import React, { useState } from 'react';
 import {
   View,
@@ -17,11 +13,15 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { InputField } from '../components/InputField';
 import { useAppContext } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import { performCalculation, validateGrade } from '../helpers/calculations';
 
 export const GradeInputScreen: React.FC = () => {
   const navigation = useNavigation();
   const { gradeInput, setGradeInput, setCalculationResult, settings } = useAppContext();
+  const { t } = useLanguage();
+  const { colors } = useTheme();
   const [errors, setErrors] = useState<{ midterm?: string; final?: string }>({});
 
   const handleMidtermChange = (text: string) => {
@@ -47,39 +47,38 @@ export const GradeInputScreen: React.FC = () => {
   const handleCalculate = () => {
     const newErrors: { midterm?: string; final?: string } = {};
 
-    // Validate midterm
     if (gradeInput.midterm === null || gradeInput.midterm === undefined) {
-      newErrors.midterm = 'Please enter your midterm grade';
+      newErrors.midterm = t.calculator.midtermError;
     } else if (!validateGrade(gradeInput.midterm)) {
-      newErrors.midterm = 'Grade must be between 0 and 100';
+      newErrors.midterm = t.calculator.gradeRangeError;
     }
 
-    // Validate final
     if (gradeInput.final === null || gradeInput.final === undefined) {
-      newErrors.final = 'Please enter your final grade';
+      newErrors.final = t.calculator.finalError;
     } else if (!validateGrade(gradeInput.final)) {
-      newErrors.final = 'Grade must be between 0 and 100';
+      newErrors.final = t.calculator.gradeRangeError;
     }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      Alert.alert('Validation Error', 'Please fix the errors before calculating.');
+      Alert.alert(t.calculator.validationError, t.calculator.validationMessage);
       return;
     }
 
-    // Perform calculation
-    const result = performCalculation(gradeInput, settings);
+    const result = performCalculation(gradeInput, settings, t);
     if (result) {
       setCalculationResult(result);
       navigation.navigate('Results' as never);
     } else {
-      Alert.alert('Error', 'Failed to calculate. Please check your inputs.');
+      Alert.alert(t.calculator.calculationError, t.calculator.calculationErrorMessage);
     }
   };
 
+  const styles = createStyles(colors);
+
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -88,142 +87,139 @@ export const GradeInputScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Ionicons name="calculator-outline" size={48} color="#6366f1" />
-          <Text style={styles.title}>Grade Calculator</Text>
-          <Text style={styles.subtitle}>Enter your midterm and final exam grades</Text>
+          <Ionicons name="calculator-outline" size={48} color={colors.primary} />
+          <Text style={[styles.title, { color: colors.text }]}>{t.calculator.title}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t.calculator.subtitle}</Text>
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <InputField
-            label="Midterm Grade (Vize)"
+            label={t.calculator.midtermLabel}
             value={gradeInput.midterm}
             onChangeText={handleMidtermChange}
-            placeholder="Enter midterm grade"
+            placeholder={t.calculator.midtermPlaceholder}
             error={errors.midterm}
             icon="school-outline"
           />
 
           <InputField
-            label="Final Exam Grade (Final)"
+            label={t.calculator.finalLabel}
             value={gradeInput.final}
             onChangeText={handleFinalChange}
-            placeholder="Enter final grade"
+            placeholder={t.calculator.finalPlaceholder}
             error={errors.final}
             icon="document-text-outline"
           />
 
-          <View style={styles.infoBox}>
-            <Ionicons name="information-circle-outline" size={20} color="#6366f1" />
-            <Text style={styles.infoText}>
-              Current weights: Midterm {settings.midtermWeight}% • Final {settings.finalWeight}%
+          <View style={[styles.infoBox, { backgroundColor: colors.infoBackground }]}>
+            <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
+            <Text style={[styles.infoText, { color: colors.info }]}>
+              {t.calculator.currentWeights
+                .replace('{midterm}', settings.midtermWeight.toString())
+                .replace('{final}', settings.finalWeight.toString())}
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.calculateButton} onPress={handleCalculate}>
+          <TouchableOpacity
+            style={[styles.calculateButton, { backgroundColor: colors.primary }]}
+            onPress={handleCalculate}
+          >
             <Ionicons name="calculator" size={24} color="#ffffff" />
-            <Text style={styles.calculateButtonText}>Calculate Semester Grade</Text>
+            <Text style={styles.calculateButtonText}>{t.calculator.calculateButton}</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={styles.secondaryButton}
+          style={[styles.secondaryButton, { backgroundColor: colors.card, borderColor: colors.primary }]}
           onPress={() => navigation.navigate('GoalCalculator' as never)}
         >
-          <Ionicons name="target-outline" size={20} color="#6366f1" />
-          <Text style={styles.secondaryButtonText}>Goal Calculator</Text>
+          <Ionicons name="flag-outline" size={20} color={colors.primary} />
+          <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>
+            {t.calculator.goalCalculator}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingTop: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginTop: 16,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f9ff',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
-    gap: 8,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#1e40af',
-  },
-  calculateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#6366f1',
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-    elevation: 2,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  calculateButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  secondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#6366f1',
-    gap: 8,
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6366f1',
-  },
-});
-
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 20,
+      paddingTop: 40,
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      marginTop: 16,
+    },
+    subtitle: {
+      fontSize: 16,
+      marginTop: 8,
+      textAlign: 'center',
+    },
+    card: {
+      borderRadius: 16,
+      padding: 24,
+      marginBottom: 16,
+      elevation: 2,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+    },
+    infoBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 20,
+      gap: 8,
+    },
+    infoText: {
+      flex: 1,
+      fontSize: 14,
+    },
+    calculateButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 16,
+      borderRadius: 12,
+      gap: 8,
+      elevation: 2,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+    },
+    calculateButtonText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#ffffff',
+    },
+    secondaryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 14,
+      borderRadius: 12,
+      borderWidth: 2,
+      gap: 8,
+    },
+    secondaryButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });

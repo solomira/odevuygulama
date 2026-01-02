@@ -1,7 +1,3 @@
-/**
- * Global state management using React Context
- */
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GradeSettings, GradeInput, CalculationResult, DEFAULT_SETTINGS } from '../types';
@@ -26,7 +22,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load settings from AsyncStorage on mount
   useEffect(() => {
     loadSettings();
   }, []);
@@ -61,7 +56,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   if (isLoading) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   return (

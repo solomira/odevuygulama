@@ -1,7 +1,3 @@
-/**
- * Card component for displaying calculation results
- */
-
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -80,4 +76,3 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
-

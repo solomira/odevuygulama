@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Grade Calculator",
+    "name": "Not Hesaplayıcı",
     "slug": "grade-calculator-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -30,9 +30,6 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": []
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {

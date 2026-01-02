@@ -1,11 +1,9 @@
-/**
- * Component for displaying detailed calculation receipt
- */
-
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { CalculationResult } from '../types';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface ReceiptSectionProps {
   result: CalculationResult;
@@ -22,8 +20,11 @@ export const ReceiptSection: React.FC<ReceiptSectionProps> = ({
   midtermWeight,
   finalWeight,
 }) => {
+  const { t, language } = useLanguage();
+  const { colors } = useTheme();
+
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat(language === 'tr' ? 'tr-TR' : 'en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -32,237 +33,248 @@ export const ReceiptSection: React.FC<ReceiptSectionProps> = ({
     }).format(date);
   };
 
+  const styles = createStyles(colors);
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Ionicons name="receipt-outline" size={24} color="#6366f1" />
-        <Text style={styles.headerText}>Calculation Report</Text>
+        <Ionicons name="receipt-outline" size={24} color={colors.primary} />
+        <Text style={[styles.headerText, { color: colors.text }]}>{t.results.reportTitle}</Text>
       </View>
 
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Grade Breakdown</Text>
-          
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            {t.results.gradeBreakdown}
+          </Text>
+
           <View style={styles.row}>
-            <Text style={styles.label}>Midterm Grade:</Text>
-            <Text style={styles.value}>{midterm.toFixed(1)}</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>
+              {t.results.midtermGrade}
+            </Text>
+            <Text style={[styles.value, { color: colors.text }]}>{midterm.toFixed(1)}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Midterm Weight:</Text>
-            <Text style={styles.value}>{midtermWeight}%</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>
+              {t.results.midtermWeight}
+            </Text>
+            <Text style={[styles.value, { color: colors.text }]}>{midtermWeight}%</Text>
           </View>
-          <View style={styles.calculationRow}>
-            <Text style={styles.calculationText}>
+          <View style={[styles.calculationRow, { backgroundColor: colors.background }]}>
+            <Text style={[styles.calculationText, { color: colors.text }]}>
               {midterm} × {midtermWeight}% = {result.breakdown.midtermContribution.toFixed(2)}
             </Text>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.row}>
-            <Text style={styles.label}>Final Grade:</Text>
-            <Text style={styles.value}>{final.toFixed(1)}</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>
+              {t.results.finalGrade}
+            </Text>
+            <Text style={[styles.value, { color: colors.text }]}>{final.toFixed(1)}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Final Weight:</Text>
-            <Text style={styles.value}>{finalWeight}%</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>
+              {t.results.finalWeight}
+            </Text>
+            <Text style={[styles.value, { color: colors.text }]}>{finalWeight}%</Text>
           </View>
-          <View style={styles.calculationRow}>
-            <Text style={styles.calculationText}>
+          <View style={[styles.calculationRow, { backgroundColor: colors.background }]}>
+            <Text style={[styles.calculationText, { color: colors.text }]}>
               {final} × {finalWeight}% = {result.breakdown.finalContribution.toFixed(2)}
             </Text>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Semester Grade:</Text>
-            <Text style={styles.totalValue}>{result.semesterGrade.toFixed(2)}</Text>
+          <View style={[styles.totalRow, { backgroundColor: colors.infoBackground }]}>
+            <Text style={[styles.totalLabel, { color: colors.text }]}>
+              {t.results.totalSemesterGrade}
+            </Text>
+            <Text style={[styles.totalValue, { color: colors.primary }]}>
+              {result.semesterGrade.toFixed(2)}
+            </Text>
           </View>
 
           {result.letterGrade && (
             <>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
               <View style={styles.row}>
-                <Text style={styles.label}>Letter Grade:</Text>
-                <Text style={[styles.value, styles.letterGrade]}>{result.letterGrade}</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>
+                  {t.results.letterGrade}
+                </Text>
+                <Text style={[styles.value, styles.letterGrade, { color: colors.primaryLight }]}>
+                  {result.letterGrade}
+                </Text>
               </View>
             </>
           )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Result Analysis</Text>
-          <View style={[styles.statusBadge, result.passed ? styles.passedBadge : styles.failedBadge]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            {t.results.resultAnalysis}
+          </Text>
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor: result.passed
+                  ? 'rgba(16, 185, 129, 0.2)'
+                  : 'rgba(239, 68, 68, 0.2)',
+              },
+            ]}
+          >
             <Ionicons
               name={result.passed ? 'checkmark-circle' : 'close-circle'}
               size={20}
-              color={result.passed ? '#10b981' : '#ef4444'}
+              color={result.passed ? colors.success : colors.error}
             />
-            <Text style={[styles.statusText, result.passed ? styles.passedText : styles.failedText]}>
-              {result.passed ? 'PASSED' : 'FAILED'}
+            <Text
+              style={[
+                styles.statusText,
+                { color: result.passed ? colors.success : colors.error },
+              ]}
+            >
+              {result.passed ? t.results.passed : t.results.failed}
             </Text>
           </View>
 
           <View style={styles.reasonsContainer}>
             {result.reasons.map((reason, index) => (
               <View key={index} style={styles.reasonItem}>
-                <Ionicons name="information-circle-outline" size={16} color="#6b7280" />
-                <Text style={styles.reasonText}>{reason}</Text>
+                <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
+                <Text style={[styles.reasonText, { color: colors.text }]}>{reason}</Text>
               </View>
             ))}
           </View>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Generated: {formatDate(result.timestamp)}</Text>
+        <View style={[styles.footer, { borderTopColor: colors.border }]}>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+            {t.results.generated} {formatDate(result.timestamp)}
+          </Text>
         </View>
       </View>
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 4,
-  },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginLeft: 8,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  label: {
-    fontSize: 15,
-    color: '#6b7280',
-  },
-  value: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  calculationRow: {
-    backgroundColor: '#f3f4f6',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  calculationText: {
-    fontSize: 14,
-    color: '#374151',
-    fontFamily: 'monospace',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e5e7eb',
-    marginVertical: 12,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f0f9ff',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  totalValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#6366f1',
-  },
-  letterGrade: {
-    fontSize: 24,
-    color: '#8b5cf6',
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 16,
-  },
-  passedBadge: {
-    backgroundColor: '#d1fae5',
-  },
-  failedBadge: {
-    backgroundColor: '#fee2e2',
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginLeft: 6,
-  },
-  passedText: {
-    color: '#10b981',
-  },
-  failedText: {
-    color: '#ef4444',
-  },
-  reasonsContainer: {
-    gap: 12,
-  },
-  reasonItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  reasonText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#4b5563',
-    lineHeight: 20,
-  },
-  footer: {
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    paddingTop: 12,
-    marginTop: 8,
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#9ca3af',
-    textAlign: 'center',
-  },
-});
-
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      paddingHorizontal: 4,
+    },
+    headerText: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginLeft: 8,
+    },
+    card: {
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 16,
+      elevation: 2,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    section: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 16,
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    label: {
+      fontSize: 15,
+    },
+    value: {
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    calculationRow: {
+      padding: 12,
+      borderRadius: 8,
+      marginTop: 8,
+      marginBottom: 12,
+    },
+    calculationText: {
+      fontSize: 14,
+      fontFamily: 'monospace',
+    },
+    divider: {
+      height: 1,
+      marginVertical: 12,
+    },
+    totalRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 12,
+      marginTop: 8,
+    },
+    totalLabel: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    totalValue: {
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    letterGrade: {
+      fontSize: 24,
+    },
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      marginBottom: 16,
+    },
+    statusText: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      marginLeft: 6,
+    },
+    reasonsContainer: {
+      gap: 12,
+    },
+    reasonItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
+    },
+    reasonText: {
+      flex: 1,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    footer: {
+      borderTopWidth: 1,
+      paddingTop: 12,
+      marginTop: 8,
+    },
+    footerText: {
+      fontSize: 12,
+      textAlign: 'center',
+    },
+  });

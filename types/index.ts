@@ -1,12 +1,8 @@
-/**
- * Type definitions for the Grade Calculator App
- */
-
 export interface GradeSettings {
-  midtermWeight: number; // Percentage (0-100)
-  finalWeight: number; // Percentage (0-100)
-  minimumFinalGrade: number; // Minimum final exam grade to pass (0-100)
-  minimumSemesterGrade: number; // Minimum semester grade to pass (0-100)
+  midtermWeight: number;
+  finalWeight: number;
+  minimumFinalGrade: number;
+  minimumSemesterGrade: number;
   letterGradesEnabled: boolean;
   letterGradeRanges: LetterGradeRange[];
 }
@@ -15,6 +11,7 @@ export interface LetterGradeRange {
   letter: string;
   min: number;
   max: number;
+  passing: boolean;
 }
 
 export interface GradeInput {
@@ -36,8 +33,9 @@ export interface CalculationResult {
 
 export interface GoalInput {
   midterm: number | null;
+  final: number | null;
   targetType: 'pass' | 'score' | 'letter';
-  targetValue: number | string | null; // For 'score': number, for 'letter': string
+  targetValue: number | string | null;
 }
 
 export interface GoalResult {
@@ -53,14 +51,15 @@ export const DEFAULT_SETTINGS: GradeSettings = {
   minimumSemesterGrade: 60,
   letterGradesEnabled: true,
   letterGradeRanges: [
-    { letter: 'AA', min: 90, max: 100 },
-    { letter: 'BA', min: 85, max: 89 },
-    { letter: 'BB', min: 80, max: 84 },
-    { letter: 'CB', min: 75, max: 79 },
-    { letter: 'CC', min: 70, max: 74 },
-    { letter: 'DC', min: 65, max: 69 },
-    { letter: 'DD', min: 60, max: 64 },
-    { letter: 'FF', min: 0, max: 59 },
+    { letter: 'AA', min: 90, max: 100, passing: true },
+    { letter: 'BA', min: 85, max: 89, passing: true },
+    { letter: 'BB', min: 80, max: 84, passing: true },
+    { letter: 'CB', min: 75, max: 79, passing: true },
+    { letter: 'CC', min: 70, max: 74, passing: true },
+    { letter: 'DC', min: 65, max: 69, passing: true },
+    { letter: 'DD', min: 60, max: 64, passing: true },
+    { letter: 'FD', min: 50, max: 59, passing: false },
+    { letter: 'FF', min: 0, max: 49, passing: false },
   ],
 };
 
