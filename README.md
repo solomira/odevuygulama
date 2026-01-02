@@ -1,4 +1,4 @@
-======================================
+
                     NOT HESAPLAYICI UYGULAMASI
                     TEKNİK AÇIKLAMA DOKÜMANI
 ======================================
