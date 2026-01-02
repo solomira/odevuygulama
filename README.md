@@ -19,18 +19,6 @@ Kullanılan Teknolojiler:
 - AsyncStorage           : Yerel veri depolama
 - Context API            : Global state yönetimi
 --------------------------------------------------------------------------------
-Klasör Yapısı
---------------------------------------------------------------------------------
-/screens       : Ana sayfa bileşenleri (4 ekran)
-/components    : Yeniden kullanılabilir UI bileşenleri
-/context       : Global state yönetimi (Context API)
-/helpers       : Hesaplama fonksiyonları
-/navigation    : Sayfa yönlendirme yapılandırması
-/translations  : Çoklu dil dosyaları
-/types         : TypeScript tip tanımlamaları
-================================================================================
- SONUÇ
-================================================================================
 
 Bu uygulama, modern React Native geliştirme pratiklerini kullanarak 
 tasarlanmış, kullanıcı dostu bir not hesaplama aracıdır. 
@@ -46,4 +34,4 @@ tasarlanmış, kullanıcı dostu bir not hesaplama aracıdır.
 - Hedef not hesaplama
 - Kalıcı veri saklama
 - uygulama tarafımca Fiziksel cihaz ve Android Emulator ile test edilmiştir.
-  
+--------------------------------------------------------------------------------
