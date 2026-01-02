@@ -1,7 +1,5 @@
-=========
-                    NOT HESAPLAYICI UYGULAMASI
-                    TEKNİK AÇIKLAMA DOKÜMANI
-======================================
+==                    NOT HESAPLAYICI UYGULAMASI
+                        TEKNİK AÇIKLAMA DOKÜMANI ==
 
 1. PROJE GENEL BAKIŞ
 --------------------------------------------------------------------------------
